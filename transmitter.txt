@@ -1,0 +1,45 @@
+
+
+// SENSOR DATA FROM TRANSMITTER
+float temp;
+float humid;
+#include "DHT.h"
+#include <SPI.h>
+#include <LoRa.h>
+#define DHTPIN 5     // Since we are connected to pin 5 on the board
+#define DHTTYPE DHT11   // The sensor we are using will be the DHT 11 that we all know and love
+DHT dht(DHTPIN, DHTTYPE);
+int counter = 0;
+void setup() {
+  Serial.begin(9600);
+  while (!Serial);
+  Serial.println("LoRa Sender");
+  
+  dht.begin();     //initialise DHT11
+  if (!LoRa.begin(915E6)) {
+    Serial.println("Starting LoRa failed!");
+    while (1);
+  }
+  LoRa.setSyncWord(0xF3);
+  LoRa.setTxPower(20);
+}
+void loop() 
+{
+  float h = dht.readHumidity();                                              
+  float t = dht.readTemperature();
+  if (isnan(h) || isnan(t)) {                                                
+    Serial.println(F("Failed to read from DHT sensor!"));
+    return;
+  }
+  // send packet
+  LoRa.beginPacket();
+  LoRa.print("@");
+  LoRa.print(t);
+  LoRa.print("A");
+  LoRa.print(h);
+  LoRa.print("B");
+  LoRa.print("\n");
+  LoRa.endPacket();
+  counter++;
+  delay(5000);
+}
